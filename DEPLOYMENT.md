@@ -19,12 +19,15 @@ Add these in Railway dashboard under "Variables":
 ```
 FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
 ENV=production
+RAILWAY_PUBLIC_DOMAIN=https://your-railway-app.up.railway.app
+PORT=8080
 FIGMA_API_TOKEN=your_figma_token_here
 FIGMA_FILE_ID=your_figma_file_id_here
 YOLO_WEIGHTS=yolov8n.pt
 YOLO_DEVICE=cpu
-PORT=8000
 ```
+
+**Important**: Replace `your-railway-app` with your actual Railway subdomain.
 
 ### 3. Configure Build Settings
 
@@ -83,6 +86,8 @@ VITE_API=https://your-railway-app.up.railway.app
 const API = import.meta.env.VITE_API || "http://127.0.0.1:8000";
 ```
 
+**Note**: The backend uses PORT 8080 in production (Railway) and PORT 8000 in local development.
+
 ### 4. Deploy
 
 Click "Deploy" - Vercel will automatically build and deploy your frontend.
@@ -131,7 +136,7 @@ npm run dev
 
 This starts both servers locally:
 - Frontend: http://localhost:5173
-- Backend: http://127.0.0.1:8000
+- Backend: http://127.0.0.1:8000 (local dev uses port 8000)
 
 ---
 

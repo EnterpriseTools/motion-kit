@@ -38,11 +38,6 @@ class FigmaService:
             suggestion=suggestion
         )
         self.diagnostics.append(diagnostic)
-        
-        # Also log to console
-        icon = "❌" if level == "error" else "⚠️" if level == "warning" else "ℹ️"
-        print(f"{icon} [{category}] {component_name}: {message}")
-        print(f"   💡 {suggestion}")
     
     def get_diagnostics_summary(self) -> List[Dict[str, str]]:
         """Get formatted diagnostics for API response."""
@@ -90,7 +85,6 @@ class FigmaService:
                         for child in page['children']:
                             traverse_node(child)
             
-            print(f"Found {len(components)} components")
             return components
             
         except Exception as e:
@@ -212,14 +206,8 @@ class FigmaService:
             if 'document' in data:
                 find_component(data['document'], component_name)
             
-            # Debug: Print all matching components
-            print(f"\n🔍 DEBUG: Found {len(all_matching_components)} components matching '{component_name}':")
-            for comp in all_matching_components:
-                print(f"  - {comp['name']} (type: {comp['type']}, has_children: {comp['has_children']}, has_props: {comp['has_component_properties']})")
-            
             if not component_node:
                 # Try to find individual variant components instead
-                print(f"⚠️ No COMPONENT_SET found, looking for individual COMPONENT nodes...")
                 variants = {}
                 
                 for comp_info in all_matching_components:
@@ -229,7 +217,6 @@ class FigmaService:
                         full_name = comp_info['name']
                         if '=' in full_name:
                             variant_name = full_name.split('=')[-1].lower()
-                            print(f"  Found variant: {variant_name} from {full_name}")
                             
                             # Fetch the full node data for this component
                             node_response = requests.get(
@@ -244,10 +231,8 @@ class FigmaService:
                                 variant_data = self._parse_variant_component(variant_node, variant_name=variant_name)
                                 if variant_data:
                                     variants[variant_name] = variant_data
-                                    print(f"  ✅ Extracted properties for {variant_name}: {list(variant_data.get('properties', {}).keys())}")
                 
                 if variants:
-                    print(f"✅ Successfully extracted {len(variants)} variants from individual components")
                     return {
                         'component_id': all_matching_components[0]['id'] if all_matching_components else None,
                         'component_name': component_name,
@@ -266,22 +251,17 @@ class FigmaService:
             # Extract variants from the component set
             variants = {}
             if 'children' in component_node:
-                print(f"🔍 DEBUG: COMPONENT_SET has {len(component_node['children'])} children")
                 for idx, variant_node in enumerate(component_node['children']):
                     # Each child is a variant
-                    print(f"  Child {idx}: name={variant_node.get('name')}, type={variant_node.get('type')}")
                     variant_props = variant_node.get('componentProperties', {})
-                    print(f"    componentProperties: {list(variant_props.keys())}")
                     
                     # Try multiple strategies to get the variant name
                     state_value = None
                     
                     # Strategy 1: Look for "State" property in componentProperties
                     for prop_name, prop_data in variant_props.items():
-                        print(f"      Found property: {prop_name} = {prop_data}")
                         if prop_name.lower() == 'state':
                             state_value = prop_data.get('value', '').lower()
-                            print(f"    ✅ Found State property: {state_value}")
                             break
                     
                     # Strategy 2: Extract from the node name (e.g., "State=charging")
@@ -289,16 +269,12 @@ class FigmaService:
                         node_name = variant_node.get('name', '')
                         if '=' in node_name:
                             state_value = node_name.split('=')[-1].lower()
-                            print(f"    ✅ Extracted from name: {state_value}")
                     
                     if state_value:
                         # Parse this variant's properties
                         variant_data = self._parse_variant_component(variant_node, variant_name=state_value)
                         if variant_data:
                             variants[state_value] = variant_data
-                            print(f"    ✅ Successfully parsed variant: {state_value}")
-                    else:
-                        print(f"    ❌ Could not determine variant name for child {idx}")
             
             if not variants:
                 self.add_diagnostic(
@@ -324,9 +300,6 @@ class FigmaService:
                 f'Failed to fetch component variants: {str(e)}',
                 'Check your Figma API access and component structure.'
             )
-            print(f"❌ Exception in fetch_component_variants: {str(e)}")
-            import traceback
-            traceback.print_exc()
             return None
     
     def _parse_variant_component(self, node: Dict, variant_name: str) -> Optional[Dict[str, Any]]:
@@ -341,19 +314,15 @@ class FigmaService:
             
             # Extract properties from the variant node itself FIRST
             self._extract_all_visual_properties(node, variant_data['properties'])
-            print(f"  📋 Extracted from parent node: {list(variant_data['properties'].keys())}")
             
             # Recursively extract properties from ALL descendants
             self._extract_from_descendants(node, variant_data['properties'], level=1)
-            
-            print(f"  ✅ Final properties for {variant_name}: {list(variant_data['properties'].keys())}")
             
             # Even if no specific properties were extracted, return the variant data
             # The frontend will handle missing properties gracefully
             return variant_data
             
         except Exception as e:
-            print(f"Failed to parse variant component {variant_name}: {str(e)}")
             return None
     
     def _extract_from_descendants(self, node: Dict, properties: Dict[str, Any], level: int = 0):
@@ -361,7 +330,6 @@ class FigmaService:
         if 'children' not in node:
             return
         
-        indent = "  " * level
         for child in node['children']:
             child_name = child.get('name', 'unnamed')
             child_type = child.get('type', 'unknown')
@@ -371,8 +339,6 @@ class FigmaService:
             self._extract_all_visual_properties(child, child_props)
             
             if child_props:
-                print(f"{indent}📋 Extracted from {child_type} '{child_name}': {list(child_props.keys())}")
-                
                 # Only add child properties that aren't already set by parent
                 for key, value in child_props.items():
                     if key not in properties or properties[key] == 0:
@@ -580,7 +546,7 @@ class FigmaService:
                 properties['strokeJoin'] = node['strokeJoin']
             
         except Exception as e:
-            print(f"Failed to extract properties from node: {str(e)}")
+            pass
     
     def _parse_component(self, node: Dict, full_name: str) -> Optional[FigmaComponent]:
         """Parse a single component and extract its styling."""
@@ -613,7 +579,6 @@ class FigmaService:
                 bounds=node.get('absoluteBoundingBox', {})
             )
         except Exception as e:
-            print(f"Failed to parse component {full_name}: {str(e)}")
             return None
     
     def _extract_child_elements(self, children: List[Dict], child_elements: Dict, prefix: str = ""):
@@ -1088,7 +1053,7 @@ class FigmaService:
                             settings[padding_property] = padding
                 
         except Exception as e:
-            print(f"Failed to extract frame background color for {component.name}: {str(e)}")
+            pass
     
     
     def _extract_text_properties_from_component(self, component: FigmaComponent, settings: Dict[str, Any], color_key: str, prefix: str, mapping: Dict[str, str] = None):

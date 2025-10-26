@@ -8,10 +8,16 @@ from dotenv import load_dotenv
 from storage import save_upload, save_results, local_result_path, UPLOADS
 from detector import run_detection   # <-- use original detector for now
 from figma_service import get_figma_service
+import pathlib
 
 load_dotenv()
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 ENV = os.getenv("ENV", "dev")
+PORT = int(os.getenv("PORT", "8000"))  # Railway uses 8080, local dev uses 8000
+
+# Define cache path relative to the api directory
+API_DIR = pathlib.Path(__file__).parent
+CACHE_PATH = API_DIR / "figma_cache.json"
 
 app = FastAPI()
 app.add_middleware(
@@ -59,10 +65,23 @@ async def upload(
     results["mode"] = mode
     save_results(job_id, results)
 
+    # Construct the base URL dynamically based on environment
+    # In production, Railway sets PUBLIC_DOMAIN_URL or we can construct from request
+    # For Railway specifically, use environment variable or construct from settings
+    base_url = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+    if not base_url:
+        # Fallback: construct from environment or use default
+        if ENV == "production":
+            # Should be set via RAILWAY_PUBLIC_DOMAIN env var in Railway
+            raise HTTPException(status_code=500, detail="RAILWAY_PUBLIC_DOMAIN environment variable not set in production")
+        else:
+            # Local development
+            base_url = f"http://127.0.0.1:{PORT}"
+
     return {
         "jobId": job_id,
-        "resultUrl": f"http://127.0.0.1:8000/api/results/{job_id}",
-        "videoUrl": f"http://127.0.0.1:8000/api/video/{job_id}",
+        "resultUrl": f"{base_url}/api/results/{job_id}",
+        "videoUrl": f"{base_url}/api/video/{job_id}",
         "status": "ready"
     }
 
@@ -173,20 +192,13 @@ async def sync_figma_designs():
                 png_data = None
                 if variant_id:
                     png_data = figma_service.fetch_component_png(variant_id)
-                    if png_data:
-                        print(f"   ✅ Fetched PNG image for {variant_name}")
                 
                 cache_data['body_tracker']['variants'][variant_name] = {
                     'properties': properties,
                     'bounds': bounds,
                     'image': png_data  # Store the PNG image data
                 }
-                print(f"📦 Storing Body-Tracker variant '{variant_name}':")
-                print(f"   Properties: {list(properties.keys())}")
-                print(f"   Bounds: {bounds}")
-                print(f"   Has Image: {png_data is not None}")
         else:
-            print(f"⚠️ Body-Tracker data not found or has no variants")
             # Add empty structure if not found
             cache_data['body_tracker'] = {
                 'component_id': None,
@@ -194,21 +206,8 @@ async def sync_figma_designs():
             }
         
         # Save to cache file
-        cache_path = "figma_cache.json"
-        with open(cache_path, 'w') as f:
+        with open(CACHE_PATH, 'w') as f:
             json.dump(cache_data, f, indent=2)
-        
-        # Log warnings to console with formatting
-        if diagnostics:
-            print("\n" + "="*60)
-            print(f"📋 FIGMA SYNC DIAGNOSTICS ({len(diagnostics)} issues found)")
-            print("="*60)
-            for d in diagnostics:
-                icon = "❌" if d['level'] == "error" else "⚠️" if d['level'] == "warning" else "ℹ️"
-                print(f"\n{icon} [{d['category']}] {d['component_name']}")
-                print(f"   {d['message']}")
-                print(f"   💡 {d['suggestion']}")
-            print("\n" + "="*60 + "\n")
         
         return {
             "status": "success",
@@ -228,8 +227,7 @@ async def sync_figma_designs():
 def get_figma_designs():
     """Get cached Figma design data."""
     try:
-        cache_path = "figma_cache.json"
-        with open(cache_path, 'r') as f:
+        with open(CACHE_PATH, 'r') as f:
             cache_data = json.load(f)
         
         return {
@@ -253,8 +251,7 @@ async def apply_figma_design(request_data: dict):
             raise HTTPException(status_code=400, detail="design_name is required")
         
         # Get cached designs
-        cache_path = "figma_cache.json"
-        with open(cache_path, 'r') as f:
+        with open(CACHE_PATH, 'r') as f:
             cache_data = json.load(f)
         
         # Find components matching the design name

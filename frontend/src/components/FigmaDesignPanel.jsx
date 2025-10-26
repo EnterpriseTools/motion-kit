@@ -53,23 +53,19 @@ export default function FigmaDesignPanel({ onApplyDesign, visualSettings }) {
   // Helper function to get available variants for a component
   const getComponentVariants = (componentName, figmaData) => {
     if (!componentName) {
-      console.log('🔍 getComponentVariants: Missing componentName');
       return [];
     }
     
     const baseName = getBaseComponentName(componentName);
-    console.log('🔍 getComponentVariants: Looking for variants of base component:', baseName);
     
     // Special handling for body-tracker - use dedicated body_tracker data
     if (baseName.toLowerCase() === 'body-tracker' && figmaData?.body_tracker?.variants) {
       const variants = Object.keys(figmaData.body_tracker.variants);
-      console.log('🔍 getComponentVariants: Found Body Tracker variants from body_tracker data:', variants);
       return variants;
     }
     
     // For other components, search through components array
     if (!figmaData?.components) {
-      console.log('🔍 getComponentVariants: No components data available');
       return [];
     }
     
@@ -97,7 +93,6 @@ export default function FigmaDesignPanel({ onApplyDesign, visualSettings }) {
     });
     
     const variantArray = Array.from(variants);
-    console.log('🔍 getComponentVariants: Found variants for', baseName, ':', variantArray);
     return variantArray;
   };
 
@@ -737,7 +732,6 @@ export default function FigmaDesignPanel({ onApplyDesign, visualSettings }) {
     
     try {
       const response = await axios.post(`${API}/api/figma/sync`);
-      console.log('🔍 Figma sync response:', response.data);
       
       if (response.data.status === 'success') {
         // The response structure includes components and visual_settings at the top level
@@ -754,35 +748,6 @@ export default function FigmaDesignPanel({ onApplyDesign, visualSettings }) {
         
         // Extract crosshair images
         figmaResponseData.crosshair_images = response.data.crosshair_images || { default: null, active: null };
-        
-        // Log warnings to console
-        if (syncWarnings.length > 0) {
-          console.warn(`⚠️ Figma sync completed with ${syncWarnings.length} warnings:`);
-          syncWarnings.forEach(w => {
-            console.warn(`  - [${w.category}] ${w.component_name}: ${w.message}`);
-            console.warn(`    💡 ${w.suggestion}`);
-          });
-        }
-        
-        console.log('📦 Figma sync completed:', {
-          components: figmaResponseData.components?.length || 0,
-          componentsWithVariants: figmaResponseData.components?.filter(comp => comp.variants && Object.keys(comp.variants).length > 0).length || 0,
-          warnings: syncWarnings.length
-        });
-        
-        // Debug: Show the actual Figma API structure
-        console.log('🔍 RAW Figma API Response:', response.data);
-        console.log('🔍 All components structure:');
-        figmaResponseData.components?.forEach((comp, index) => {
-          console.log(`  ${index + 1}. "${comp.name}":`, {
-            id: comp.id,
-            type: comp.type,
-            variants: comp.variants,
-            properties: comp.properties,
-            // Show all properties to understand structure
-            allKeys: Object.keys(comp)
-          });
-        });
         
         setFigmaData(figmaResponseData);
         
@@ -828,16 +793,14 @@ export default function FigmaDesignPanel({ onApplyDesign, visualSettings }) {
   const loadCachedDesigns = async () => {
     try {
       const response = await axios.get(`${API}/api/figma/designs`);
-      console.log('🔍 Cached designs response:', response.data);
       
       if (response.data.status === 'success') {
         // The cached data has a nested structure: response.data.data contains the actual figma data
         const cachedData = response.data.data;
-        console.log('📦 Cached Figma data:', cachedData);
         setFigmaData(cachedData);
       }
     } catch (err) {
-      console.log('No cached Figma designs found');
+      // No cached designs found - this is not an error, just means user needs to sync
     }
   };
 
@@ -1091,13 +1054,6 @@ export default function FigmaDesignPanel({ onApplyDesign, visualSettings }) {
                               const selectedComponentName = selectedComponents['Body Tracker'];
                               const availableVariants = getComponentVariants(selectedComponentName, figmaData);
                               
-                              // Debug logging
-                              console.log('🔍 Body Tracker variant check:', {
-                                selectedComponent: selectedComponentName,
-                                availableVariants: availableVariants,
-                                variantCount: availableVariants.length
-                              });
-                              
                               if (availableVariants.length > 0) {
                                 return (
                                   <>
@@ -1262,9 +1218,6 @@ export default function FigmaDesignPanel({ onApplyDesign, visualSettings }) {
                                               // Include image if available
                                               image: variantData.image,
                                             };
-                                            
-                                            console.log('🔍 Body Tracker ALL properties for', targetVariantName, ':', bodyTrackerProperties);
-                                            console.log('🔍 Raw variant data:', variantData);
                                           }
                                         }
                                       }
