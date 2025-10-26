@@ -1,0 +1,22 @@
+# Ignore Python backend completely
+api/
+*.py
+requirements.txt
+Dockerfile
+railway.toml
+.dockerignore
+Procfile
+
+# Ignore uploads and results
+uploads/
+results/
+assets/
+
+# Ignore other backend files
+venv/
+__pycache__/
+*.pyc
+
+# Keep only frontend
+!frontend/
+
