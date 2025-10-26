@@ -16,7 +16,9 @@ PORT=8080
 
 # URLs and Origins
 FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
-RAILWAY_PUBLIC_DOMAIN=https://your-railway-app.up.railway.app
+
+# Railway provides RAILWAY_PUBLIC_DOMAIN automatically (no need to set manually)
+# It will be: motion-kit-production.up.railway.app (without https://)
 
 # Figma Integration (Optional)
 FIGMA_API_TOKEN=your_figma_token_here
@@ -26,6 +28,8 @@ FIGMA_FILE_ID=your_figma_file_id_here
 YOLO_WEIGHTS=yolov8n.pt
 YOLO_DEVICE=cpu
 ```
+
+**Note**: Railway automatically provides `RAILWAY_PUBLIC_DOMAIN` as a system variable. You don't need to set it manually!
 
 #### Local Development
 ```bash
@@ -56,14 +60,17 @@ YOLO_DEVICE=cpu
 The backend constructs URLs dynamically based on environment:
 
 ```python
-# Production: Uses RAILWAY_PUBLIC_DOMAIN environment variable
-base_url = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+# Production: Uses RAILWAY_PUBLIC_DOMAIN (automatically provided by Railway)
+# Railway provides the domain without https:// prefix
+base_url = os.getenv("RAILWAY_PUBLIC_DOMAIN")  # e.g., "motion-kit-production.up.railway.app"
+if base_url and not base_url.startswith('http'):
+    base_url = f"https://{base_url}"  # Add protocol
 
 # Local Development: Constructs from PORT
 base_url = f"http://127.0.0.1:{PORT}"
 ```
 
-**Important**: The `RAILWAY_PUBLIC_DOMAIN` variable must be set in production. The application will raise an error if ENV=production but this variable is missing.
+**Important**: Railway automatically provides the `RAILWAY_PUBLIC_DOMAIN` variable. The backend automatically adds the `https://` protocol prefix.
 
 ### CORS Configuration
 CORS is configured to allow:
@@ -91,14 +98,16 @@ No hard-coded string paths like `"uploads/"` or `"figma_cache.json"` in the code
 
 When deploying to Railway, ensure these environment variables are set:
 
+- [x] `RAILWAY_PUBLIC_DOMAIN` - Automatically provided by Railway ✅
 - [ ] `ENV=production`
 - [ ] `PORT=8080`
 - [ ] `FRONTEND_ORIGIN` (your Vercel URL)
-- [ ] `RAILWAY_PUBLIC_DOMAIN` (your Railway public domain)
 - [ ] `FIGMA_API_TOKEN` (if using Figma integration)
 - [ ] `FIGMA_FILE_ID` (if using Figma integration)
 - [ ] `YOLO_WEIGHTS=yolov8n.pt`
 - [ ] `YOLO_DEVICE=cpu`
+
+**Good news**: Railway automatically provides `RAILWAY_PUBLIC_DOMAIN`! You only need to set the others.
 
 ## Vercel Frontend Configuration
 
@@ -138,7 +147,7 @@ These are constructed dynamically based on environment.
 ## Troubleshooting
 
 ### Error: "RAILWAY_PUBLIC_DOMAIN environment variable not set in production"
-This means ENV=production but the backend can't determine its public URL. Set the `RAILWAY_PUBLIC_DOMAIN` environment variable in Railway.
+This error should no longer occur - Railway automatically provides this variable. If you see it, check that Railway hasn't changed their system variables.
 
 ### CORS Errors
 Ensure `FRONTEND_ORIGIN` in Railway matches your Vercel deployment URL exactly (including https://).

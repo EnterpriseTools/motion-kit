@@ -66,17 +66,21 @@ async def upload(
     save_results(job_id, results)
 
     # Construct the base URL dynamically based on environment
-    # In production, Railway sets PUBLIC_DOMAIN_URL or we can construct from request
-    # For Railway specifically, use environment variable or construct from settings
-    base_url = os.getenv("RAILWAY_PUBLIC_DOMAIN")
-    if not base_url:
-        # Fallback: construct from environment or use default
-        if ENV == "production":
-            # Should be set via RAILWAY_PUBLIC_DOMAIN env var in Railway
-            raise HTTPException(status_code=500, detail="RAILWAY_PUBLIC_DOMAIN environment variable not set in production")
-        else:
-            # Local development
-            base_url = f"http://127.0.0.1:{PORT}"
+    # Railway provides RAILWAY_PUBLIC_DOMAIN without https:// prefix
+    base_url = (
+        os.getenv("RAILWAY_PUBLIC_DOMAIN") or 
+        os.getenv("PUBLIC_URL") or
+        os.getenv("RAILWAY_STATIC_URL") or
+        None
+    )
+    
+    if base_url:
+        # Railway provides domain without protocol, add https:// if missing
+        if not base_url.startswith(('http://', 'https://')):
+            base_url = f"https://{base_url}"
+    else:
+        # Fallback for local development
+        base_url = f"http://127.0.0.1:{PORT}"
 
     return {
         "jobId": job_id,

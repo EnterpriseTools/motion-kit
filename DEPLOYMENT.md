@@ -19,7 +19,6 @@ Add these in Railway dashboard under "Variables":
 ```
 FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
 ENV=production
-RAILWAY_PUBLIC_DOMAIN=https://your-railway-app.up.railway.app
 PORT=8080
 FIGMA_API_TOKEN=your_figma_token_here
 FIGMA_FILE_ID=your_figma_file_id_here
@@ -27,7 +26,7 @@ YOLO_WEIGHTS=yolov8n.pt
 YOLO_DEVICE=cpu
 ```
 
-**Important**: Replace `your-railway-app` with your actual Railway subdomain.
+**Note**: Railway automatically provides `RAILWAY_PUBLIC_DOMAIN` as a system variable - you don't need to set it manually!
 
 ### 3. Configure Build Settings
 
