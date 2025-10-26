@@ -28,11 +28,11 @@ PORT=8000
 
 ### 3. Configure Build Settings
 
-Railway should auto-detect the configuration from `railway.toml` and `Procfile`.
+Railway will automatically detect the `Dockerfile` and use it for deployment.
 
 **Root Directory**: Keep as `/` (project root)
-**Build Command**: Handled by nixpacks (see `nixpacks.toml`)
-**Start Command**: `cd api && uvicorn main:app --host 0.0.0.0 --port $PORT`
+**Build Method**: Docker (detected automatically)
+**Dockerfile Path**: `Dockerfile` (specified in `railway.toml`)
 
 ### 4. Add Railway Volume (Optional but Recommended)
 

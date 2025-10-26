@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+*.egg-info/
+.pytest_cache/
+*.log
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project
+uploads/
+results/
+assets/
+*.mp4
+api/figma_cache.json
+api/*.pt
+
+# Documentation
+README.md
+DEPLOYMENT.md
+FIGMA_SETUP.md
+
+# Config files
+.env.local
+.env.development
+.env.test
+vercel.json
+
