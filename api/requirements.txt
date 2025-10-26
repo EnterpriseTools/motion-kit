@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+python-dotenv
+requests
+# detection
+ultralytics
+opencv-python-headless
+numpy
+supervision==0.21.0
+lapx==0.5.7
+ffmpeg-python

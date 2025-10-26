@@ -1,0 +1,19 @@
+{
+  "name": "proto-cam",
+  "version": "1.0.0",
+  "description": "Video analysis prototype with object detection",
+  "scripts": {
+    "dev": "npm run kill-ports && concurrently -k -p \"[{name}]\" -n \"backend,frontend\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd api && source venv/bin/activate && uvicorn main:app --reload --host 127.0.0.1 --port 8000 --timeout-keep-alive 300",
+    "dev:frontend": "cd frontend && npm run dev",
+    "kill-ports": "lsof -ti:8000 | xargs kill -9 2>/dev/null || true && lsof -ti:5173 | xargs kill -9 2>/dev/null || true",
+    "install:all": "cd api && pip install -r requirements.txt && cd ../frontend && npm install",
+    "setup": "cd api && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["video", "analysis", "yolo", "object-detection", "fastapi", "react"],
+  "author": "",
+  "license": "ISC"
+}
