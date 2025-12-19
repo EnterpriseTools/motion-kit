@@ -387,7 +387,7 @@ export default function App(){
             textShadow:"0 0 24px rgba(255, 209, 102, 0.25)",
             fontWeight:"700"
           }}>
-            PROTOCAM
+            PROTOCAM 1.0
           </h1>
           <p style={{
             color:"var(--muted)", 
